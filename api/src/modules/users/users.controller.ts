@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
+import { ListQueryDto } from '../../common/dto/list-query.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
@@ -24,8 +25,8 @@ export class UsersController {
   // Gestores também listam usuários (para atribuir tarefas).
   @Get()
   @Roles(Role.ADMIN, Role.MANAGER)
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@Query() query: ListQueryDto) {
+    return this.usersService.findAll(query);
   }
 
   @Get(':id')

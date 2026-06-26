@@ -1,12 +1,14 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { getToken } from '@/lib/auth-storage';
+import { toQueryString, type ListParams } from '@/lib/query-string';
 import type { Client, ClientDocument, ClientWithDocuments, TaxRegime } from '@/types';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? '/api';
 
 export const clientKeys = {
   all: ['clients'] as const,
+  list: (params: ListParams) => ['clients', 'list', params] as const,
   detail: (id: string) => ['clients', id] as const,
 };
 
@@ -20,8 +22,12 @@ export interface ClientInput {
   active?: boolean;
 }
 
-export function useClients() {
-  return useQuery({ queryKey: clientKeys.all, queryFn: () => api.get<Client[]>('/clients') });
+export function useClients(params: ListParams = {}) {
+  return useQuery({
+    queryKey: clientKeys.list(params),
+    queryFn: () => api.get<Client[]>(`/clients${toQueryString(params)}`),
+    placeholderData: keepPreviousData,
+  });
 }
 
 export function useClient(id: string | undefined) {

@@ -1,6 +1,8 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, Role } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { ListQueryDto } from '../../common/dto/list-query.dto';
+import { buildListWhere } from '../../common/list-query.util';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -33,9 +35,12 @@ export class UsersService {
   }
 
   /// Lista usuários ativos (não excluídos).
-  findAll() {
+  findAll(query: ListQueryDto = {}) {
     return this.prisma.user.findMany({
-      where: { deletedAt: null },
+      where: {
+        deletedAt: null,
+        ...buildListWhere(query, { searchFields: ['name', 'email'], dateField: 'createdAt' }),
+      },
       orderBy: { name: 'asc' },
       select: userSafeSelect,
     });

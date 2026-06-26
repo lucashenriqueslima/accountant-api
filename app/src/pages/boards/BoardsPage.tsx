@@ -68,7 +68,7 @@ export function BoardsPage() {
         {loadingBoards || loadingBoard ? (
           <p className="text-sm text-muted-foreground">Carregando…</p>
         ) : board ? (
-          <KanbanBoard board={board} />
+          <KanbanBoard board={board} allowCreate defaultAssigneeId={assigneeId || undefined} />
         ) : (
           <p className="text-sm text-muted-foreground">Nenhum quadro disponível.</p>
         )}

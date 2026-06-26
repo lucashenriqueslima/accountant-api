@@ -59,8 +59,9 @@ model Client {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  cards     Card[]
-  documents ClientDocument[]
+  cards         Card[]
+  documents     ClientDocument[]
+  cardTemplates CardTemplate[]
 
   @@map("clients")
 }
@@ -93,7 +94,8 @@ model Board {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
-  columns Column[]
+  columns       Column[]
+  cardTemplates CardTemplate[]
 
   @@map("boards")
 }
@@ -138,6 +140,10 @@ model Card {
   createdById String?
   createdBy   User?   @relation("CardCreator", fields: [createdById], references: [id], onDelete: SetNull)
 
+  // Modelo que gerou o cartão (quando criado automaticamente pelo cron).
+  cardTemplateId String?
+  cardTemplate   CardTemplate? @relation(fields: [cardTemplateId], references: [id], onDelete: SetNull)
+
   labels     CardLabel[]
   activities CardActivity[]
 
@@ -147,6 +153,7 @@ model Card {
   @@index([columnId])
   @@index([clientId])
   @@index([assigneeId])
+  @@index([cardTemplateId])
   @@map("cards")
 }
 
@@ -171,6 +178,42 @@ enum CardAction {
   MOVED
   ASSIGNED
   DELETED
+}
+
+/// Títulos pré-salvos para agilizar a criação de cartões/tarefas.
+model CardType {
+  id        String   @id @default(cuid())
+  title     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("card_types")
+}
+
+/// Modelo de card — tarefa recorrente que o cron transforma em cartões
+/// todos os dias (criados na coluna "A fazer" do quadro, sem responsável).
+model CardTemplate {
+  id          String        @id @default(cuid())
+  title       String
+  description String?       @db.Text
+  priority    Priority      @default(MEDIUM)
+  frequency   CardFrequency @default(MONTHLY) // periodicidade da geração
+  active      Boolean       @default(true) // só modelos ativos geram cartões
+
+  boardId String
+  board   Board  @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  generatedCards Card[] // cartões já gerados a partir deste modelo
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([boardId])
+  @@index([clientId])
+  @@map("card_templates")
 }
 
 /// Etiquetas reutilizáveis para classificar cartões.
@@ -213,6 +256,12 @@ enum Priority {
   MEDIUM
   HIGH
   URGENT
+}
+
+/// Periodicidade com que um modelo de card gera cartões.
+enum CardFrequency {
+  MONTHLY
+  YEARLY
 }
 
 enum TaxRegime {

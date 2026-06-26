@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ClientDocument } from '@prisma/client';
+import { ListQueryDto } from '../../common/dto/list-query.dto';
+import { buildListWhere } from '../../common/list-query.util';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { StorageService, type StorageDriver } from '../storage/storage.service';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -17,8 +19,14 @@ export class ClientsService {
     return this.prisma.client.create({ data: dto });
   }
 
-  findAll() {
-    return this.prisma.client.findMany({ orderBy: { name: 'asc' } });
+  findAll(query: ListQueryDto = {}) {
+    return this.prisma.client.findMany({
+      where: buildListWhere(query, {
+        searchFields: ['name', 'tradeName', 'document', 'email', 'phone'],
+        dateField: 'createdAt',
+      }),
+      orderBy: { name: 'asc' },
+    });
   }
 
   async findOne(id: string) {

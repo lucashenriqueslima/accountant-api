@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { Card as CardType } from '@/types';
 import { priorityLabels, priorityStyles } from '../constants';
+import { CardAssignButton } from './CardAssignButton';
 
 function initials(name: string) {
   return name
@@ -75,11 +76,14 @@ export function KanbanCard({ card, onDragStart }: KanbanCardProps) {
           <span />
         )}
 
-        {card.assignee && (
-          <Avatar className="size-6">
-            <AvatarFallback className="text-[10px]">{initials(card.assignee.name)}</AvatarFallback>
-          </Avatar>
-        )}
+        <div className="flex items-center gap-1">
+          {card.assignee && (
+            <Avatar className="size-6">
+              <AvatarFallback className="text-[10px]">{initials(card.assignee.name)}</AvatarFallback>
+            </Avatar>
+          )}
+          <CardAssignButton card={card} />
+        </div>
       </div>
     </article>
   );

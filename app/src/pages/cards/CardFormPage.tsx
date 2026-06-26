@@ -6,6 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ApiError } from '@/lib/api';
 import { useBoardColumns, useCard, useCreateCard, useUpdateCard, type CardInput } from '@/features/cards/api';
+import { useCardTypes } from '@/features/card-types/api';
+import { CardTypesManagerDialog } from '@/features/card-types/CardTypesManagerDialog';
+import { TitleCombobox } from '@/features/card-types/TitleCombobox';
 import { useBoards } from '@/features/boards/api';
 import { priorityLabels } from '@/features/boards/constants';
 import { useClients } from '@/features/clients/api';
@@ -26,11 +29,14 @@ export function CardFormPage() {
   const { data: boards } = useBoards();
   const { data: clients } = useClients();
   const { data: users } = useUsers();
+  const { data: cardTypes } = useCardTypes();
   const createCard = useCreateCard();
   const updateCard = useUpdateCard(id ?? '');
 
   const [boardId, setBoardId] = useState('');
   const { data: columns } = useBoardColumns(boardId);
+
+  const [typesOpen, setTypesOpen] = useState(false);
 
   const [form, setForm] = useState({
     title: '',
@@ -104,11 +110,13 @@ export function CardFormPage() {
         <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
           <div className="space-y-1.5">
             <Label htmlFor="title">Título</Label>
-            <Input
+            <TitleCombobox
               id="title"
               required
               value={form.title}
-              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+              onChange={(title) => setForm((f) => ({ ...f, title }))}
+              cardTypes={cardTypes ?? []}
+              onManage={() => setTypesOpen(true)}
             />
           </div>
 
@@ -239,6 +247,8 @@ export function CardFormPage() {
           </div>
         </form>
       </div>
+
+      <CardTypesManagerDialog open={typesOpen} onOpenChange={setTypesOpen} />
     </>
   );
 }

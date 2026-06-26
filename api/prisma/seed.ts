@@ -1,4 +1,4 @@
-import { PrismaClient, Department, Priority, Role, TaxRegime } from '@prisma/client';
+import { PrismaClient, CardFrequency, Department, Priority, Role, TaxRegime } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -13,6 +13,8 @@ async function main() {
   await prisma.passwordResetToken.deleteMany();
   await prisma.cardLabel.deleteMany();
   await prisma.card.deleteMany();
+  await prisma.cardType.deleteMany();
+  await prisma.cardTemplate.deleteMany();
   await prisma.column.deleteMany();
   await prisma.board.deleteMany();
   await prisma.label.deleteMany();
@@ -79,6 +81,17 @@ async function main() {
       },
     }),
   ]);
+
+  // Tipos de tarefa (títulos pré-salvos) para agilizar a criação de cartões.
+  await prisma.cardType.createMany({
+    data: [
+      { title: 'Apuração de ICMS' },
+      { title: 'Entrega do Simples Nacional (PGDAS-D)' },
+      { title: 'Declaração Anual do MEI (DASN-SIMEI)' },
+      { title: 'Folha de pagamento' },
+      { title: 'Fechamento contábil mensal' },
+    ],
+  });
 
   // Etiquetas
   const [urgente, mensal, anual] = await Promise.all([
@@ -151,6 +164,43 @@ async function main() {
       createdById: admin.id,
       labels: { create: [{ labelId: anual.id }] },
     },
+  });
+
+  // Modelos de card — tarefas recorrentes que o cron transforma em cartões
+  // todo dia às 00:01, na coluna "A fazer" do quadro (sem responsável).
+  await prisma.cardTemplate.createMany({
+    data: [
+      {
+        title: 'Apuração de ICMS',
+        description: 'Apurar e transmitir a GIA do mês.',
+        priority: Priority.HIGH,
+        frequency: CardFrequency.MONTHLY,
+        boardId: fiscal.id,
+        clientId: techStore.id,
+      },
+      {
+        title: 'Entrega do Simples Nacional (PGDAS-D)',
+        description: 'Calcular e transmitir o DAS do Simples.',
+        priority: Priority.MEDIUM,
+        frequency: CardFrequency.MONTHLY,
+        boardId: fiscal.id,
+        clientId: padaria.id,
+      },
+      {
+        title: 'Declaração Anual do MEI (DASN-SIMEI)',
+        description: 'Declaração anual referente ao exercício anterior.',
+        priority: Priority.LOW,
+        frequency: CardFrequency.YEARLY,
+        boardId: fiscal.id,
+        clientId: mei.id,
+      },
+      {
+        title: 'Fechamento contábil mensal',
+        priority: Priority.MEDIUM,
+        frequency: CardFrequency.MONTHLY,
+        boardId: fiscal.id,
+      },
+    ],
   });
 
   // Quadro do Departamento Pessoal (sem cartões, só estrutura)

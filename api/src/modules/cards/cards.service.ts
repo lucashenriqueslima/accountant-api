@@ -1,8 +1,10 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CardAction, Prisma, Role } from '@prisma/client';
+import { buildListWhere } from '../../common/list-query.util';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateCardDto } from './dto/create-card.dto';
+import { ListCardsQueryDto } from './dto/list-cards-query.dto';
 import { MoveCardDto } from './dto/move-card.dto';
 import { UpdateCardDto } from './dto/update-card.dto';
 
@@ -33,9 +35,25 @@ export class CardsService {
     return card;
   }
 
-  findAll(columnId?: string) {
+  findAll(query: ListCardsQueryDto = {}) {
+    const { columnId } = query;
     return this.prisma.card.findMany({
-      where: { deletedAt: null, ...(columnId ? { columnId } : {}) },
+      where: {
+        deletedAt: null,
+        ...(columnId ? { columnId } : {}),
+        ...buildListWhere(query, {
+          searchFields: [
+            'title',
+            'description',
+            'client.name',
+            'client.tradeName',
+            'client.document',
+            'assignee.name',
+            'column.name',
+          ],
+          dateField: 'dueDate',
+        }),
+      },
       orderBy: [{ columnId: 'asc' }, { position: 'asc' }],
       include: cardInclude,
     });

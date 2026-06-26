@@ -6,9 +6,12 @@ import { useAuth } from '@/features/auth/AuthContext';
 import { cn } from '@/lib/utils';
 
 export function MyBoardPage() {
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const { data: boards, isLoading } = useMyBoards();
   const [selectedId, setSelectedId] = useState<string>();
+
+  // Admin/gestor podem criar tarefas direto no próprio board (atribuídas a si).
+  const canCreate = hasRole('ADMIN', 'MANAGER');
 
   useEffect(() => {
     if (!selectedId && boards?.length) setSelectedId(boards[0].id);
@@ -49,7 +52,7 @@ export function MyBoardPage() {
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Carregando…</p>
         ) : board ? (
-          <KanbanBoard board={board} />
+          <KanbanBoard board={board} allowCreate={canCreate} defaultAssigneeId={user?.id} />
         ) : (
           <p className="text-sm text-muted-foreground">
             Você ainda não tem tarefas atribuídas.

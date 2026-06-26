@@ -1,9 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { toQueryString, type ListParams } from '@/lib/query-string';
 import type { Card, CardWithActivities, Column, Priority } from '@/types';
 
 export const cardKeys = {
   all: ['cards'] as const,
+  list: (params: ListParams) => ['cards', 'list', params] as const,
   detail: (id: string) => ['cards', id] as const,
 };
 
@@ -15,10 +17,15 @@ export interface CardInput {
   assigneeId?: string | null;
   priority: Priority;
   dueDate?: string | null;
+  position?: number;
 }
 
-export function useCards() {
-  return useQuery({ queryKey: cardKeys.all, queryFn: () => api.get<Card[]>('/cards') });
+export function useCards(params: ListParams = {}) {
+  return useQuery({
+    queryKey: cardKeys.list(params),
+    queryFn: () => api.get<Card[]>(`/cards${toQueryString(params)}`),
+    placeholderData: keepPreviousData,
+  });
 }
 
 export function useCard(id: string | undefined) {

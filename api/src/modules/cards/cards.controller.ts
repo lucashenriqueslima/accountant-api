@@ -6,6 +6,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
 import { CardsService } from './cards.service';
 import { CreateCardDto } from './dto/create-card.dto';
+import { ListCardsQueryDto } from './dto/list-cards-query.dto';
 import { MoveCardDto } from './dto/move-card.dto';
 import { UpdateCardDto } from './dto/update-card.dto';
 
@@ -29,8 +30,8 @@ export class CardsController {
 
   @Get()
   @Roles(Role.ADMIN, Role.MANAGER)
-  findAll(@Query('columnId') columnId?: string) {
-    return this.cardsService.findAll(columnId);
+  findAll(@Query() query: ListCardsQueryDto) {
+    return this.cardsService.findAll(query);
   }
 
   // Detalhe + histórico de atividades.

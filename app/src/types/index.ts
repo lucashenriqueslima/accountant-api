@@ -3,6 +3,7 @@
 export type Role = 'ADMIN' | 'MANAGER' | 'EMPLOYEE';
 export type Department = 'FISCAL' | 'CONTABIL' | 'PESSOAL' | 'SOCIETARIO' | 'FINANCEIRO';
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+export type CardFrequency = 'MONTHLY' | 'YEARLY';
 export type TaxRegime = 'SIMPLES_NACIONAL' | 'LUCRO_PRESUMIDO' | 'LUCRO_REAL' | 'MEI';
 
 export interface User {
@@ -39,6 +40,31 @@ export interface Label {
   id: string;
   name: string;
   color: string;
+}
+
+// Título pré-salvo para agilizar a criação de tarefas.
+export interface CardType {
+  id: string;
+  title: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Modelo de card — tarefa recorrente que o cron transforma em cartões
+// todo dia às 00:01 (coluna "A fazer" do quadro, sem responsável).
+export interface CardTemplate {
+  id: string;
+  title: string;
+  description?: string | null;
+  priority: Priority;
+  frequency: CardFrequency;
+  active: boolean;
+  boardId: string;
+  board?: { id: string; name: string } | null;
+  clientId?: string | null;
+  client?: { id: string; name: string } | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CardLabel {

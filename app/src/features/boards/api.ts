@@ -50,3 +50,18 @@ export function useMoveCard() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: boardKeys.all }),
   });
 }
+
+interface AssignCardInput {
+  cardId: string;
+  assigneeId: string | null;
+}
+
+// Atribuir/desatribuir um cartão a um usuário.
+export function useAssignCard() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ cardId, assigneeId }: AssignCardInput) =>
+      api.patch<Card>(`/cards/${cardId}`, { assigneeId }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: boardKeys.all }),
+  });
+}

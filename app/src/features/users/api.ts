@@ -1,9 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { toQueryString, type ListParams } from '@/lib/query-string';
 import type { Role, User } from '@/types';
 
 export const userKeys = {
   all: ['users'] as const,
+  list: (params: ListParams) => ['users', 'list', params] as const,
   detail: (id: string) => ['users', id] as const,
 };
 
@@ -15,8 +17,12 @@ export interface UserInput {
   active?: boolean;
 }
 
-export function useUsers() {
-  return useQuery({ queryKey: userKeys.all, queryFn: () => api.get<User[]>('/users') });
+export function useUsers(params: ListParams = {}) {
+  return useQuery({
+    queryKey: userKeys.list(params),
+    queryFn: () => api.get<User[]>(`/users${toQueryString(params)}`),
+    placeholderData: keepPreviousData,
+  });
 }
 
 export function useUser(id: string | undefined) {
