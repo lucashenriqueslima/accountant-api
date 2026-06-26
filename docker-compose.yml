@@ -1,0 +1,31 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: forte_contabilidade_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+      MYSQL_DATABASE: ${DB_DATABASE:-forte_contabilidade}
+    ports:
+      - '${DB_PORT:-3306}:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      timeout: 20s
+      retries: 10
+
+  # Servidor SMTP de testes — captura os e-mails em dev (UI web em http://localhost:8025)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: forte_contabilidade_mailhog
+    restart: unless-stopped
+    ports:
+      - '${MAIL_PORT:-1025}:1025' # SMTP
+      - '${MAILHOG_UI_PORT:-8025}:8025' # Interface web
+    logging:
+      driver: 'none' # MailHog é muito verboso; silencia os logs
+
+volumes:
+  mysql_data:
+    driver: local

@@ -1,0 +1,223 @@
+// Forte Contabilidade — schema do banco de dados
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+/// Membros do escritório de contabilidade.
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  passwordHash String?   @db.Text
+  role         Role      @default(EMPLOYEE)
+  avatarUrl    String?   @db.Text
+  active       Boolean   @default(true)
+  deletedAt    DateTime? // soft delete
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  assignedCards       Card[]               @relation("CardAssignee")
+  createdCards        Card[]               @relation("CardCreator")
+  cardActivities      CardActivity[]
+  uploadedDocuments   ClientDocument[]
+  passwordResetTokens PasswordResetToken[]
+
+  @@map("users")
+}
+
+/// Tokens de recuperação de senha (armazenamos o hash, nunca o token bruto).
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+/// Empresas/pessoas atendidas pelo escritório.
+model Client {
+  id        String    @id @default(cuid())
+  name      String // razão social ou nome
+  tradeName String? // nome fantasia
+  document  String    @unique // CNPJ ou CPF
+  taxRegime TaxRegime @default(SIMPLES_NACIONAL)
+  email     String?
+  phone     String?
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  cards     Card[]
+  documents ClientDocument[]
+
+  @@map("clients")
+}
+
+/// Documento/arquivo de um cliente (armazenado no S3 ou em disco local em dev).
+model ClientDocument {
+  id           String   @id @default(cuid())
+  clientId     String
+  client       Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  filename     String
+  key          String   @db.Text // chave no storage (S3 key ou caminho local)
+  mimeType     String?
+  size         Int?
+  driver       String   @default("local") // "s3" | "local"
+  uploadedById String?
+  uploadedBy   User?    @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+
+  @@index([clientId])
+  @@map("client_documents")
+}
+
+/// Quadro kanban, normalmente por departamento.
+model Board {
+  id          String     @id @default(cuid())
+  name        String
+  description String?    @db.Text
+  department  Department @default(FISCAL)
+  position    Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  columns Column[]
+
+  @@map("boards")
+}
+
+/// Etapa/coluna dentro de um quadro.
+model Column {
+  id        String   @id @default(cuid())
+  name      String
+  position  Int      @default(0)
+  color     String?
+  boardId   String
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cards Card[]
+
+  @@index([boardId])
+  @@map("columns")
+}
+
+/// Cartão = tarefa/obrigação dentro de uma coluna.
+model Card {
+  id          String    @id @default(cuid())
+  title       String
+  description String?   @db.Text
+  position    Int       @default(0)
+  priority    Priority  @default(MEDIUM)
+  dueDate     DateTime?
+  completedAt DateTime?
+  deletedAt   DateTime? // soft delete
+
+  columnId String
+  column   Column @relation(fields: [columnId], references: [id], onDelete: Cascade)
+
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  assigneeId String?
+  assignee   User?   @relation("CardAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+
+  createdById String?
+  createdBy   User?   @relation("CardCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  labels     CardLabel[]
+  activities CardActivity[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([columnId])
+  @@index([clientId])
+  @@index([assigneeId])
+  @@map("cards")
+}
+
+/// Histórico de atividades de uma tarefa (quem, quando, o quê).
+model CardActivity {
+  id        String     @id @default(cuid())
+  cardId    String
+  card      Card       @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    CardAction
+  detail    String?    @db.Text
+  createdAt DateTime   @default(now())
+
+  @@index([cardId])
+  @@map("card_activities")
+}
+
+enum CardAction {
+  CREATED
+  UPDATED
+  MOVED
+  ASSIGNED
+  DELETED
+}
+
+/// Etiquetas reutilizáveis para classificar cartões.
+model Label {
+  id    String      @id @default(cuid())
+  name  String      @unique
+  color String      @default("#64748b")
+  cards CardLabel[]
+
+  @@map("labels")
+}
+
+/// Tabela de junção Card <-> Label (N:N).
+model CardLabel {
+  cardId  String
+  labelId String
+  card    Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  label   Label  @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@id([cardId, labelId])
+  @@map("card_labels")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum Department {
+  FISCAL
+  CONTABIL
+  PESSOAL
+  SOCIETARIO
+  FINANCEIRO
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaxRegime {
+  SIMPLES_NACIONAL
+  LUCRO_PRESUMIDO
+  LUCRO_REAL
+  MEI
+}
