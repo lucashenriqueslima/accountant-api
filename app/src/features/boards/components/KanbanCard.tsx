@@ -1,10 +1,13 @@
-import { Building2, CalendarDays } from 'lucide-react';
+import { Building2, CalendarDays, MessageSquare } from 'lucide-react';
+import { useState } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { Card as CardType } from '@/types';
+import { CardDetailDialog } from '@/features/cards/CardDetailDialog';
 import { priorityLabels, priorityStyles } from '../constants';
 import { CardAssignButton } from './CardAssignButton';
+import { useAuth } from '@/features/auth/AuthContext';
 
 function initials(name: string) {
   return name
@@ -25,6 +28,9 @@ interface KanbanCardProps {
 }
 
 export function KanbanCard({ card, onDragStart }: KanbanCardProps) {
+  const { hasRole } = useAuth();
+  const [detailOpen, setDetailOpen] = useState(false);
+
   const isOverdue = card.dueDate && new Date(card.dueDate) < new Date() && !card.completedAt;
 
   return (
@@ -62,19 +68,33 @@ export function KanbanCard({ card, onDragStart }: KanbanCardProps) {
       )}
 
       <div className="flex items-center justify-between pt-1">
-        {card.dueDate ? (
-          <span
-            className={cn(
-              'flex items-center gap-1 text-xs',
-              isOverdue ? 'font-medium text-red-600' : 'text-muted-foreground',
-            )}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            // Não deve iniciar o arraste do cartão ao ser clicado.
+            onClick={(e) => {
+              e.stopPropagation();
+              setDetailOpen(true);
+            }}
+            title="Abrir detalhes"
+            aria-label="Abrir detalhes da tarefa"
+            className="inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            <CalendarDays className="size-3.5" />
-            {formatDate(card.dueDate)}
-          </span>
-        ) : (
-          <span />
-        )}
+            <MessageSquare className="size-3.5" />
+          </button>
+
+          {card.dueDate && (
+            <span
+              className={cn(
+                'flex items-center gap-1 text-xs',
+                isOverdue ? 'font-medium text-red-600' : 'text-muted-foreground',
+              )}
+            >
+              <CalendarDays className="size-3.5" />
+              {formatDate(card.dueDate)}
+            </span>
+          )}
+        </div>
 
         <div className="flex items-center gap-1">
           {card.assignee && (
@@ -82,9 +102,11 @@ export function KanbanCard({ card, onDragStart }: KanbanCardProps) {
               <AvatarFallback className="text-[10px]">{initials(card.assignee.name)}</AvatarFallback>
             </Avatar>
           )}
-          <CardAssignButton card={card} />
+          {hasRole('ADMIN', 'MANAGER') && <CardAssignButton card={card} />}
         </div>
       </div>
+
+      <CardDetailDialog cardId={card.id} open={detailOpen} onOpenChange={setDetailOpen} />
     </article>
   );
 }

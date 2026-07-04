@@ -1,4 +1,4 @@
-import { Building2, KanbanSquare, LayoutDashboard, ListChecks, LogOut, Users } from 'lucide-react';
+import { Building2, KanbanSquare, ListChecks, LogOut, Users } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { BrandMark } from '@/components/brand/BrandMark';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -17,7 +17,6 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { to: '/', label: 'Meu board', icon: LayoutDashboard, end: true },
   { to: '/boards', label: 'Boards da equipe', icon: KanbanSquare, end: false, roles: ['ADMIN', 'MANAGER'] },
   { to: '/tarefas', label: 'Tarefas', icon: ListChecks, end: false, roles: ['ADMIN', 'MANAGER'] },
   { to: '/clientes', label: 'Clientes', icon: Building2, end: false, roles: ['ADMIN', 'MANAGER'] },

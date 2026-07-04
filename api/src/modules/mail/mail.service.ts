@@ -26,6 +26,19 @@ export class MailService {
     );
   }
 
+  /// Envio genérico de e-mail (corpo em HTML, anexos opcionais).
+  async send(options: {
+    to: string | string[];
+    cc?: string | string[];
+    subject: string;
+    html: string;
+    attachments?: { filename: string; content: Buffer }[];
+  }): Promise<string> {
+    const info = await this.transporter.sendMail({ from: this.from, ...options });
+    this.logger.log(`E-mail enviado para ${options.to} (id: ${info.messageId})`);
+    return info.messageId;
+  }
+
   /// Envia o e-mail de recuperação de senha com o link de redefinição.
   async sendPasswordReset(to: string, name: string, resetLink: string): Promise<void> {
     const html = `

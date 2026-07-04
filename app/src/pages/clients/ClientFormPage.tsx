@@ -1,10 +1,11 @@
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, LayoutTemplate } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ApiError } from '@/lib/api';
+import { CardTemplatesManagerDialog } from '@/features/card-templates/CardTemplatesManagerDialog';
 import { useClient, useCreateClient, useUpdateClient, type ClientInput } from '@/features/clients/api';
 import { taxRegimeOptions } from '@/features/clients/constants';
 import { DocumentsSection } from '@/features/clients/components/DocumentsSection';
@@ -32,6 +33,7 @@ export function ClientFormPage() {
     active: true,
   });
   const [error, setError] = useState<string | null>(null);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
 
   useEffect(() => {
     if (existing) {
@@ -75,6 +77,18 @@ export function ClientFormPage() {
           </Link>
         </Button>
         <h1 className="text-lg font-semibold">{isEdit ? 'Editar cliente' : 'Novo cliente'}</h1>
+        {isEdit && existing && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="ml-auto"
+            onClick={() => setTemplatesOpen(true)}
+          >
+            <LayoutTemplate className="size-4" />
+            Modelos de Tarefa
+          </Button>
+        )}
       </header>
 
       <div className="flex-1 overflow-auto p-6">
@@ -181,6 +195,15 @@ export function ClientFormPage() {
           )}
         </div>
       </div>
+
+      {isEdit && existing && (
+        <CardTemplatesManagerDialog
+          open={templatesOpen}
+          onOpenChange={setTemplatesOpen}
+          clientId={existing.id}
+          clientName={existing.tradeName ?? existing.name}
+        />
+      )}
     </>
   );
 }

@@ -23,11 +23,14 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  assignedCards       Card[]               @relation("CardAssignee")
-  createdCards        Card[]               @relation("CardCreator")
-  cardActivities      CardActivity[]
-  uploadedDocuments   ClientDocument[]
-  passwordResetTokens PasswordResetToken[]
+  assignedCards         Card[]               @relation("CardAssignee")
+  createdCards          Card[]               @relation("CardCreator")
+  cardActivities        CardActivity[]
+  cardComments          CardComment[]
+  uploadedDocuments     ClientDocument[]
+  uploadedCardFiles     CardAttachment[]
+  sentCardEmails        CardEmail[]
+  passwordResetTokens   PasswordResetToken[]
 
   @@map("users")
 }
@@ -144,8 +147,11 @@ model Card {
   cardTemplateId String?
   cardTemplate   CardTemplate? @relation(fields: [cardTemplateId], references: [id], onDelete: SetNull)
 
-  labels     CardLabel[]
-  activities CardActivity[]
+  labels      CardLabel[]
+  activities  CardActivity[]
+  comments    CardComment[]
+  attachments CardAttachment[]
+  emails      CardEmail[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -155,6 +161,65 @@ model Card {
   @@index([assigneeId])
   @@index([cardTemplateId])
   @@map("cards")
+}
+
+/// Comentário (rich text) de uma tarefa. Pode ter anexos próprios.
+model CardComment {
+  id        String   @id @default(cuid())
+  cardId    String
+  card      Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  authorId  String?
+  author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  body      String   @db.Text // HTML do editor rich text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  attachments CardAttachment[]
+
+  @@index([cardId])
+  @@map("card_comments")
+}
+
+/// Arquivo anexado a uma tarefa. Quando `commentId` é nulo, o anexo pertence
+/// à própria tarefa (aba "Anexos"); quando preenchido, pertence a um comentário.
+model CardAttachment {
+  id           String       @id @default(cuid())
+  cardId       String
+  card         Card         @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  commentId    String?
+  comment      CardComment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  filename     String
+  key          String       @db.Text // chave no storage (S3 key ou caminho local)
+  mimeType     String?
+  size         Int?
+  driver       String       @default("local") // "s3" | "local"
+  uploadedById String?
+  uploadedBy   User?        @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime     @default(now())
+
+  @@index([cardId])
+  @@index([commentId])
+  @@map("card_attachments")
+}
+
+/// Registro de um e-mail enviado a partir de uma tarefa (apenas tarefas concluídas).
+model CardEmail {
+  id          String    @id @default(cuid())
+  cardId      String
+  card        Card      @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  recipients  String    @db.Text // destinatários separados por vírgula
+  cc          String?   @db.Text
+  subject     String
+  body        String    @db.Text // HTML enviado
+  attachments String?   @db.Text // nomes dos arquivos anexados, separados por vírgula
+  status      String    @default("SENT") // SENT | FAILED
+  error       String?   @db.Text
+  sentById    String?
+  sentBy      User?     @relation(fields: [sentById], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+
+  @@index([cardId])
+  @@map("card_emails")
 }
 
 /// Histórico de atividades de uma tarefa (quem, quando, o quê).

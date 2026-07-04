@@ -1,6 +1,5 @@
-import { Plus, X } from 'lucide-react';
-import { useRef, useState, type KeyboardEvent } from 'react';
-import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
+import { Fragment, useState } from 'react';
 import { cn } from '@/lib/utils';
 import type { Column } from '@/types';
 import { KanbanCard } from './KanbanCard';
@@ -9,54 +8,38 @@ interface KanbanColumnProps {
   column: Column;
   onDragStart: (cardId: string) => void;
   onDropCard: (columnId: string, position: number) => void;
-  /// Quando presente, habilita a criação rápida de tarefas na coluna.
-  onAddCard?: (columnId: string, title: string) => Promise<unknown>;
+  /// Quando presente, habilita a criação de tarefas: abre o modal para esta coluna.
+  onAddCard?: (columnId: string) => void;
 }
 
 export function KanbanColumn({ column, onDragStart, onDropCard, onAddCard }: KanbanColumnProps) {
   const [isOver, setIsOver] = useState(false);
-  const [adding, setAdding] = useState(false);
-  const [title, setTitle] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  const submit = async () => {
-    const value = title.trim();
-    if (!value || !onAddCard) return;
-    setSubmitting(true);
-    try {
-      await onAddCard(column.id, value);
-      setTitle('');
-      inputRef.current?.focus(); // mantém aberto para adicionar várias
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      void submit();
-    } else if (e.key === 'Escape') {
-      setAdding(false);
-      setTitle('');
-    }
-  };
+  // Índice da "fenda" onde o cartão será solto (0 = antes do 1º, length = no fim).
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   return (
     <section
       onDragOver={(e) => {
         e.preventDefault();
         setIsOver(true);
+        // Sobre a área vazia da coluna: solta no fim.
+        setDragOverIndex(column.cards.length);
       }}
-      onDragLeave={() => setIsOver(false)}
+      onDragLeave={(e) => {
+        // Ignora quando ainda está dentro da coluna (evita piscar entre cartões).
+        if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+        setIsOver(false);
+        setDragOverIndex(null);
+      }}
       onDrop={(e) => {
         e.preventDefault();
+        const target = dragOverIndex ?? column.cards.length;
         setIsOver(false);
-        onDropCard(column.id, column.cards.length);
+        setDragOverIndex(null);
+        onDropCard(column.id, target);
       }}
       className={cn(
-        'flex w-72 shrink-0 flex-col rounded-xl border bg-muted/40 transition-colors',
+        'flex max-h-full w-72 shrink-0 flex-col rounded-xl border bg-muted/40 transition-colors',
         isOver && 'border-primary/50 bg-muted',
       )}
     >
@@ -68,59 +51,48 @@ export function KanbanColumn({ column, onDragStart, onDropCard, onAddCard }: Kan
         </span>
       </header>
 
-      <div className="flex flex-1 flex-col gap-2 p-2 pt-0">
-        {column.cards.map((card) => (
-          <KanbanCard key={card.id} card={card} onDragStart={onDragStart} />
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2 pt-0">
+        {column.cards.map((card, index) => (
+          <Fragment key={card.id}>
+            {dragOverIndex === index && <DropIndicator />}
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Metade de cima do cartão = soltar antes; metade de baixo = depois.
+                const rect = e.currentTarget.getBoundingClientRect();
+                const after = e.clientY > rect.top + rect.height / 2;
+                setIsOver(true);
+                setDragOverIndex(index + (after ? 1 : 0));
+              }}
+            >
+              <KanbanCard card={card} onDragStart={onDragStart} />
+            </div>
+          </Fragment>
         ))}
-        {column.cards.length === 0 && !adding && (
+        {dragOverIndex === column.cards.length && <DropIndicator />}
+        {column.cards.length === 0 && (
           <p className="px-2 py-6 text-center text-xs text-muted-foreground">
             {onAddCard ? 'Sem tarefas' : 'Arraste cartões para cá'}
           </p>
         )}
 
-        {/* Criação rápida */}
-        {onAddCard &&
-          (adding ? (
-            <div className="rounded-lg border bg-card p-2 shadow-sm">
-              <textarea
-                ref={inputRef}
-                autoFocus
-                rows={2}
-                value={title}
-                placeholder="Título da tarefa…"
-                onChange={(e) => setTitle(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="w-full resize-none bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-              />
-              <div className="mt-1.5 flex items-center gap-1.5">
-                <Button size="sm" onClick={() => void submit()} disabled={!title.trim() || submitting}>
-                  {submitting ? 'Adicionando…' : 'Adicionar'}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-8"
-                  title="Fechar"
-                  onClick={() => {
-                    setAdding(false);
-                    setTitle('');
-                  }}
-                >
-                  <X className="size-4" />
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setAdding(true)}
-              className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              <Plus className="size-4" />
-              Adicionar tarefa
-            </button>
-          ))}
+        {onAddCard && (
+          <button
+            type="button"
+            onClick={() => onAddCard(column.id)}
+            className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <Plus className="size-4" />
+            Adicionar tarefa
+          </button>
+        )}
       </div>
     </section>
   );
+}
+
+/// Linha que indica onde o cartão arrastado será solto.
+function DropIndicator() {
+  return <div className="h-1 rounded-full bg-primary" aria-hidden />;
 }

@@ -166,7 +166,7 @@ async function main() {
     },
   });
 
-  // Modelos de card — tarefas recorrentes que o cron transforma em cartões
+  // Modelos de Tarefa — tarefas recorrentes que o cron transforma em cartões
   // todo dia às 00:01, na coluna "A fazer" do quadro (sem responsável).
   await prisma.cardTemplate.createMany({
     data: [

@@ -8,7 +8,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createReadStream, existsSync } from 'node:fs';
-import { mkdir, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
 
@@ -88,6 +88,19 @@ export class StorageService {
       });
     }
     return `${this.apiPublicUrl}/api/files/${encodeURIComponent(key)}`;
+  }
+
+  /// Conteúdo do arquivo como Buffer — usado para anexar arquivos a e-mails.
+  async getBuffer(key: string, driver: StorageDriver): Promise<Buffer> {
+    if (driver === 's3') {
+      const res = await this.s3.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }));
+      const bytes = await res.Body?.transformToByteArray();
+      if (!bytes) throw new NotFoundException('Arquivo não encontrado');
+      return Buffer.from(bytes);
+    }
+    const fullPath = this.resolveLocal(key);
+    if (!existsSync(fullPath)) throw new NotFoundException('Arquivo não encontrado');
+    return readFile(fullPath);
   }
 
   async remove(key: string, driver: StorageDriver): Promise<void> {

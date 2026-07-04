@@ -31,6 +31,10 @@ import {
 interface CardTemplatesManagerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Quando definido, restringe o modal aos modelos deste cliente. */
+  clientId?: string;
+  /** Nome do cliente, usado apenas para o título quando há escopo. */
+  clientName?: string;
 }
 
 const selectClass =
@@ -55,12 +59,14 @@ const emptyForm = {
 };
 
 /**
- * Modal para gerenciar os modelos de card — tarefas recorrentes que o cron
+ * Modal para gerenciar os Modelos de Tarefa — tarefas recorrentes que o cron
  * transforma em cartões todo dia às 00:01, na coluna "A fazer" do quadro.
  */
 export function CardTemplatesManagerDialog({
   open,
   onOpenChange,
+  clientId,
+  clientName,
 }: CardTemplatesManagerDialogProps) {
   const { data: templates } = useCardTemplates();
   const { data: boards } = useBoards();
@@ -72,14 +78,22 @@ export function CardTemplatesManagerDialog({
   const deleteTemplate = useDeleteCardTemplate();
   const generateCards = useGenerateCards();
 
-  const [form, setForm] = useState(emptyForm);
+  // Com escopo de cliente, o formulário já nasce vinculado a ele.
+  const initialForm = { ...emptyForm, clientId: clientId ?? '' };
+
+  const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [generated, setGenerated] = useState<string | null>(null);
   const [typesOpen, setTypesOpen] = useState(false);
 
+  // Quando há escopo, mostra apenas os modelos do cliente em questão.
+  const visibleTemplates = clientId
+    ? templates?.filter((template) => template.clientId === clientId)
+    : templates;
+
   const resetForm = () => {
-    setForm(emptyForm);
+    setForm(initialForm);
     setEditingId(null);
   };
 
@@ -176,10 +190,13 @@ export function CardTemplatesManagerDialog({
       >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Modelos de card</DialogTitle>
+            <DialogTitle>
+              {clientId ? `Modelos de Tarefa · ${clientName ?? 'cliente'}` : 'Modelos de Tarefa'}
+            </DialogTitle>
             <DialogDescription>
-              Tarefas recorrentes que o cron gera todo dia às 00:01, na coluna “A fazer” do quadro e
-              sem responsável.
+              {clientId
+                ? 'Modelos vinculados a este cliente. Os cartões são gerados pelo cron todo dia às 00:01, na coluna “A fazer” do quadro.'
+                : 'Tarefas recorrentes que o cron gera todo dia às 00:01, na coluna “A fazer” do quadro e sem responsável.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -208,7 +225,7 @@ export function CardTemplatesManagerDialog({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className={cn('grid gap-3', clientId ? 'grid-cols-1' : 'grid-cols-2')}>
               <div className="space-y-1.5">
                 <Label htmlFor="template-board">Quadro</Label>
                 <select
@@ -226,22 +243,24 @@ export function CardTemplatesManagerDialog({
                 </select>
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="template-client">Cliente</Label>
-                <select
-                  id="template-client"
-                  value={form.clientId}
-                  onChange={(event) => setForm((f) => ({ ...f, clientId: event.target.value }))}
-                  className={selectClass}
-                >
-                  <option value="">Sem cliente</option>
-                  {clients?.map((client) => (
-                    <option key={client.id} value={client.id}>
-                      {client.tradeName ?? client.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {!clientId && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="template-client">Cliente</Label>
+                  <select
+                    id="template-client"
+                    value={form.clientId}
+                    onChange={(event) => setForm((f) => ({ ...f, clientId: event.target.value }))}
+                    className={selectClass}
+                  >
+                    <option value="">Sem cliente</option>
+                    {clients?.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.tradeName ?? client.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-3 items-end gap-3">
@@ -319,8 +338,8 @@ export function CardTemplatesManagerDialog({
 
           {/* Lista de modelos */}
           <ul className="max-h-64 space-y-1 overflow-auto">
-            {templates?.length ? (
-              templates.map((template) => (
+            {visibleTemplates?.length ? (
+              visibleTemplates.map((template) => (
                 <li
                   key={template.id}
                   className={cn(
@@ -382,7 +401,9 @@ export function CardTemplatesManagerDialog({
               ))
             ) : (
               <li className="px-2 py-6 text-center text-sm text-muted-foreground">
-                Nenhum modelo cadastrado ainda.
+                {clientId
+                  ? 'Nenhum modelo para este cliente ainda.'
+                  : 'Nenhum modelo cadastrado ainda.'}
               </li>
             )}
           </ul>

@@ -7,7 +7,6 @@ import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage';
 import { LoginPage } from '@/pages/auth/LoginPage';
 import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage';
 import { BoardsPage } from '@/pages/boards/BoardsPage';
-import { MyBoardPage } from '@/pages/boards/MyBoardPage';
 import { CardFormPage } from '@/pages/cards/CardFormPage';
 import { CardShowPage } from '@/pages/cards/CardShowPage';
 import { CardsListPage } from '@/pages/cards/CardsListPage';
@@ -36,7 +35,6 @@ export const router = createBrowserRouter([
         path: '/',
         element: <AppLayout />,
         children: [
-          { index: true, element: <MyBoardPage /> },
           { path: 'boards', element: gate(managers, <BoardsPage />) },
 
           // Tarefas (cards)

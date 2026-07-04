@@ -105,6 +105,46 @@ export interface CardWithActivities extends Card {
   activities: CardActivity[];
 }
 
+// Anexo de uma tarefa. Quando `commentId` é nulo, pertence à própria tarefa
+// (aba "Anexos"); caso contrário, pertence a um comentário.
+export interface CardAttachment {
+  id: string;
+  cardId: string;
+  commentId?: string | null;
+  filename: string;
+  mimeType?: string | null;
+  size?: number | null;
+  url: string;
+  createdAt: string;
+  uploadedBy?: { id: string; name: string } | null;
+}
+
+export interface CardComment {
+  id: string;
+  cardId: string;
+  body: string; // HTML (rich text)
+  createdAt: string;
+  updatedAt: string;
+  author?: { id: string; name: string } | null;
+  attachments: CardAttachment[];
+}
+
+export type CardEmailStatus = 'SENT' | 'FAILED';
+
+export interface CardEmail {
+  id: string;
+  cardId: string;
+  recipients: string; // destinatários separados por vírgula
+  cc?: string | null;
+  subject: string;
+  body: string; // HTML
+  attachments?: string | null; // nomes dos arquivos, separados por vírgula
+  status: CardEmailStatus;
+  error?: string | null;
+  createdAt: string;
+  sentBy?: { id: string; name: string } | null;
+}
+
 export interface ClientDocument {
   id: string;
   filename: string;
