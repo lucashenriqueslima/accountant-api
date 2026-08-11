@@ -88,4 +88,16 @@
       font-size: 1rem !important;
     }
   }
+
+  /* Ao abrir um Dialog, o react-remove-scroll (Radix) compensa a barra de
+     rolagem com margin-right no body. No mobile a barra é sobreposta: não há
+     o que compensar, e a margem espreme a página inteira atrás do modal.
+     O seletor precisa do `html` na frente: a regra do Radix é injetada em
+     runtime, depois desta folha, e também usa !important — só ganhamos no
+     desempate por especificidade. */
+  @media (max-width: 767px) {
+    html body[data-scroll-locked] {
+      margin-right: 0 !important;
+    }
+  }
 }

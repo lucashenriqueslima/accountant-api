@@ -1,4 +1,5 @@
 import { createBrowserRouter } from 'react-router-dom';
+import { HomeRedirect } from '@/components/auth/HomeRedirect';
 import { RequireAuth } from '@/components/auth/RequireAuth';
 import { RequireRole } from '@/components/auth/RequireRole';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -7,6 +8,7 @@ import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage';
 import { LoginPage } from '@/pages/auth/LoginPage';
 import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage';
 import { BoardsPage } from '@/pages/boards/BoardsPage';
+import { MyBoardPage } from '@/pages/boards/MyBoardPage';
 import { CardFormPage } from '@/pages/cards/CardFormPage';
 import { CardShowPage } from '@/pages/cards/CardShowPage';
 import { CardsListPage } from '@/pages/cards/CardsListPage';
@@ -35,6 +37,12 @@ export const router = createBrowserRouter([
         path: '/',
         element: <AppLayout />,
         children: [
+          // Home: manda cada papel para a primeira tela que ele enxerga.
+          { index: true, element: <HomeRedirect /> },
+
+          // Meu board — todos os papéis (só os cartões atribuídos ao usuário).
+          { path: 'meu-board', element: <MyBoardPage /> },
+
           { path: 'boards', element: gate(managers, <BoardsPage />) },
 
           // Tarefas (cards)

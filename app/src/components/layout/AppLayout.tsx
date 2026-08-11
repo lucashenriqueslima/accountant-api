@@ -1,4 +1,13 @@
-import { Building2, KanbanSquare, ListChecks, LogOut, Menu, Users, X } from 'lucide-react';
+import {
+  Building2,
+  KanbanSquare,
+  LayoutDashboard,
+  ListChecks,
+  LogOut,
+  Menu,
+  Users,
+  X,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { BrandMark } from '@/components/brand/BrandMark';
@@ -18,6 +27,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  { to: '/meu-board', label: 'Meu board', icon: LayoutDashboard, end: false },
   { to: '/boards', label: 'Boards da equipe', icon: KanbanSquare, end: false, roles: ['ADMIN', 'MANAGER'] },
   { to: '/tarefas', label: 'Tarefas', icon: ListChecks, end: false, roles: ['ADMIN', 'MANAGER'] },
   { to: '/clientes', label: 'Clientes', icon: Building2, end: false, roles: ['ADMIN', 'MANAGER'] },
@@ -57,7 +67,7 @@ export function AppLayout() {
   }, [location.pathname]);
 
   const nav = (
-    <nav className="flex flex-1 flex-col gap-1 px-3">
+    <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3">
       {visibleItems.map(({ to, label, icon: Icon, end }) => (
         <NavLink
           key={to}
@@ -113,13 +123,16 @@ export function AppLayout() {
 
       {/* Drawer de navegação (somente mobile) */}
       {menuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
+        // h-dvh (e não só inset-0): no mobile a barra de URL faz o viewport do
+        // `fixed` ficar maior que a área visível, jogando o rodapé do drawer
+        // para fora da tela.
+        <div className="fixed inset-0 z-50 h-dvh md:hidden">
           <div
             className="absolute inset-0 bg-black/50"
             aria-hidden
             onClick={() => setMenuOpen(false)}
           />
-          <aside className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col border-r bg-card shadow-xl">
+          <aside className="absolute inset-y-0 left-0 flex w-72 max-w-[85dvw] flex-col border-r bg-card shadow-xl">
             <div className="flex items-center justify-between py-3 pl-5 pr-2">
               <Brand />
               <Button

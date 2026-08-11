@@ -27,7 +27,7 @@ export function CardDetailDialog({ cardId, open, onOpenChange }: CardDetailDialo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         aria-describedby={undefined}
-        className="flex max-h-[90vh] max-w-3xl flex-col gap-0 overflow-hidden p-0"
+        className="flex max-h-[90dvh] max-w-3xl flex-col gap-0 overflow-hidden p-0"
       >
         {!card ? (
           <div className="p-6">
