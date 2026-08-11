@@ -129,7 +129,7 @@ export function CardFormDialog({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="card-board">Quadro</Label>
                 <select
@@ -169,7 +169,7 @@ export function CardFormDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="card-client">Cliente</Label>
                 <select
@@ -205,7 +205,7 @@ export function CardFormDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="card-priority">Prioridade</Label>
                 <select

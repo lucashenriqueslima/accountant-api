@@ -24,18 +24,22 @@ const columns = [
   }),
   columnHelper.accessor('document', {
     header: 'CNPJ / CPF',
+    meta: { className: 'hidden sm:table-cell' },
     cell: (info) => <span className="font-mono text-sm">{info.getValue()}</span>,
   }),
   columnHelper.accessor('taxRegime', {
     header: 'Regime',
+    meta: { className: 'hidden md:table-cell' },
     cell: (info) => <Badge variant="secondary">{taxRegimeLabels[info.getValue()]}</Badge>,
   }),
   columnHelper.accessor('email', {
     header: 'E-mail',
+    meta: { className: 'hidden lg:table-cell' },
     cell: (info) => info.getValue() ?? '—',
   }),
   columnHelper.accessor('active', {
     header: 'Status',
+    meta: { className: 'hidden sm:table-cell' },
     cell: (info) => (
       <Badge variant={info.getValue() ? 'default' : 'outline'}>
         {info.getValue() ? 'Ativo' : 'Inativo'}
@@ -68,7 +72,7 @@ export function ClientsPage() {
 
   return (
     <>
-      <header className="flex items-center justify-between border-b px-6 py-4">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3 sm:px-6 sm:py-4">
         <div>
           <h1 className="text-lg font-semibold">Clientes</h1>
           <p className="text-sm text-muted-foreground">
@@ -83,7 +87,7 @@ export function ClientsPage() {
         </Button>
       </header>
 
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-4 sm:p-6">
         {isError ? (
           <p className="text-sm text-destructive">Erro ao carregar: {(error as Error).message}</p>
         ) : (

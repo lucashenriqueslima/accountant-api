@@ -31,6 +31,7 @@ export function UsersListPage() {
       }),
       columnHelper.accessor('email', {
         header: sortableHeader('E-mail'),
+        meta: { className: 'hidden md:table-cell' },
         cell: (info) => <span className="text-muted-foreground">{info.getValue()}</span>,
       }),
       columnHelper.accessor('role', {
@@ -43,6 +44,7 @@ export function UsersListPage() {
       }),
       columnHelper.accessor('active', {
         header: 'Status',
+        meta: { className: 'hidden sm:table-cell' },
         cell: (info) => (
           <Badge variant={info.getValue() ? 'default' : 'outline'}>
             {info.getValue() ? 'Ativo' : 'Inativo'}
@@ -82,7 +84,7 @@ export function UsersListPage() {
 
   return (
     <>
-      <header className="flex items-center justify-between border-b px-6 py-4">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3 sm:px-6 sm:py-4">
         <div>
           <h1 className="text-lg font-semibold">Usuários</h1>
           <p className="text-sm text-muted-foreground">Gerencie membros e papéis do escritório.</p>
@@ -95,7 +97,7 @@ export function UsersListPage() {
         </Button>
       </header>
 
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-4 sm:p-6">
         <DataTable
           columns={columns}
           data={users ?? []}

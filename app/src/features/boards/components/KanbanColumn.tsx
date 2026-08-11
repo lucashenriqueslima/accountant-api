@@ -6,13 +6,23 @@ import { KanbanCard } from './KanbanCard';
 
 interface KanbanColumnProps {
   column: Column;
+  /// Colunas do quadro, para o seletor "mover para" dos cartões (mobile).
+  moveTargets: { id: string; name: string }[];
+  onMoveCard: (cardId: string, columnId: string) => void;
   onDragStart: (cardId: string) => void;
   onDropCard: (columnId: string, position: number) => void;
   /// Quando presente, habilita a criação de tarefas: abre o modal para esta coluna.
   onAddCard?: (columnId: string) => void;
 }
 
-export function KanbanColumn({ column, onDragStart, onDropCard, onAddCard }: KanbanColumnProps) {
+export function KanbanColumn({
+  column,
+  moveTargets,
+  onMoveCard,
+  onDragStart,
+  onDropCard,
+  onAddCard,
+}: KanbanColumnProps) {
   const [isOver, setIsOver] = useState(false);
   // Índice da "fenda" onde o cartão será solto (0 = antes do 1º, length = no fim).
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -39,7 +49,7 @@ export function KanbanColumn({ column, onDragStart, onDropCard, onAddCard }: Kan
         onDropCard(column.id, target);
       }}
       className={cn(
-        'flex max-h-full w-72 shrink-0 flex-col rounded-xl border bg-muted/40 transition-colors',
+        'flex max-h-full w-72 shrink-0 snap-center flex-col rounded-xl border bg-muted/40 transition-colors md:snap-align-none',
         isOver && 'border-primary/50 bg-muted',
       )}
     >
@@ -66,7 +76,13 @@ export function KanbanColumn({ column, onDragStart, onDropCard, onAddCard }: Kan
                 setDragOverIndex(index + (after ? 1 : 0));
               }}
             >
-              <KanbanCard card={card} onDragStart={onDragStart} />
+              <KanbanCard
+                card={card}
+                currentColumnId={column.id}
+                moveTargets={moveTargets}
+                onMove={onMoveCard}
+                onDragStart={onDragStart}
+              />
             </div>
           </Fragment>
         ))}

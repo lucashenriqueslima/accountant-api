@@ -70,7 +70,7 @@ export function UserFormPage() {
 
   return (
     <>
-      <header className="flex items-center gap-3 border-b px-6 py-4">
+      <header className="flex flex-wrap items-center gap-3 border-b px-4 py-3 sm:px-6 sm:py-4">
         <Button asChild variant="ghost" size="icon">
           <Link to="/usuarios">
             <ArrowLeft className="size-4" />
@@ -79,7 +79,7 @@ export function UserFormPage() {
         <h1 className="text-lg font-semibold">{isEdit ? 'Editar usuário' : 'Novo usuário'}</h1>
       </header>
 
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-4 sm:p-6">
         <form onSubmit={handleSubmit} className="max-w-lg space-y-5">
           <div className="space-y-1.5">
             <Label htmlFor="name">Nome</Label>

@@ -40,7 +40,7 @@ export function CardDetailDialog({ cardId, open, onOpenChange }: CardDetailDialo
           </div>
         ) : (
           <>
-            <DialogHeader className="border-b px-6 py-4 text-left">
+            <DialogHeader className="border-b px-4 py-4 text-left sm:px-6">
               <DialogTitle className="pr-8">{card.title}</DialogTitle>
               {card.column && (
                 <p className="text-xs text-muted-foreground">
@@ -50,7 +50,7 @@ export function CardDetailDialog({ cardId, open, onOpenChange }: CardDetailDialo
             </DialogHeader>
 
             <Tabs defaultValue="comments" className="flex min-h-0 flex-1 flex-col">
-              <div className="border-b px-6 py-2">
+              <div className="border-b px-4 py-2 sm:px-6">
                 <TabsList>
                   <TabsTrigger value="comments">
                     <MessageSquare className="size-4" />
@@ -67,7 +67,7 @@ export function CardDetailDialog({ cardId, open, onOpenChange }: CardDetailDialo
                 </TabsList>
               </div>
 
-              <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6">
                 <TabsContent value="comments">
                   <CommentsTab cardId={card.id} />
                 </TabsContent>

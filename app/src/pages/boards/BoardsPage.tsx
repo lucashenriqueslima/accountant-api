@@ -19,7 +19,7 @@ export function BoardsPage() {
 
   return (
     <>
-      <header className="border-b px-6 py-4">
+      <header className="border-b px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-lg font-semibold">Boards da equipe</h1>
@@ -32,7 +32,7 @@ export function BoardsPage() {
           <select
             value={assigneeId}
             onChange={(e) => setAssigneeId(e.target.value)}
-            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring sm:w-auto"
           >
             <option value="">Todos os responsáveis</option>
             {users?.map((u) => (
@@ -64,7 +64,7 @@ export function BoardsPage() {
         )}
       </header>
 
-      <div className="flex-1 overflow-hidden p-6">
+      <div className="flex-1 overflow-hidden p-4 sm:p-6">
         {loadingBoards || loadingBoard ? (
           <p className="text-sm text-muted-foreground">Carregando…</p>
         ) : board ? (

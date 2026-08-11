@@ -70,7 +70,7 @@ export function ClientFormPage() {
 
   return (
     <>
-      <header className="flex items-center gap-3 border-b px-6 py-4">
+      <header className="flex flex-wrap items-center gap-3 border-b px-4 py-3 sm:px-6 sm:py-4">
         <Button asChild variant="ghost" size="icon">
           <Link to="/clientes">
             <ArrowLeft className="size-4" />
@@ -91,7 +91,7 @@ export function ClientFormPage() {
         )}
       </header>
 
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-4 sm:p-6">
         <div className="max-w-2xl space-y-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
@@ -104,7 +104,7 @@ export function ClientFormPage() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="tradeName">Nome fantasia</Label>
                 <Input
@@ -124,7 +124,7 @@ export function ClientFormPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="taxRegime">Regime tributário</Label>
                 <select

@@ -4,8 +4,17 @@ import {
   getSortedRowModel,
   useReactTable,
   type ColumnDef,
+  type RowData,
   type SortingState,
 } from '@tanstack/react-table';
+
+declare module '@tanstack/react-table' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface ColumnMeta<TData extends RowData, TValue> {
+    /** Classes aplicadas ao th/td da coluna (ex.: 'hidden md:table-cell'). */
+    className?: string;
+  }
+}
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { DataTableToolbar } from './DataTableToolbar';
@@ -33,6 +42,8 @@ interface DataTableProps<TData> {
 /**
  * Tabela reutilizável de todo o projeto: toolbar com busca textual + filtro de
  * período (server-side) e ordenação client-side. Basta passar `columns` e `data`.
+ * Colunas podem definir `meta: { className: 'hidden md:table-cell' }` para
+ * sumir em telas estreitas; o restante rola horizontalmente se precisar.
  */
 export function DataTable<TData>({
   columns,
@@ -69,13 +80,19 @@ export function DataTable<TData>({
         showDateFilter={showDateFilter}
       />
 
-      <div className="rounded-xl border">
+      <div className="overflow-x-auto rounded-xl border">
         <table className="w-full text-sm">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b bg-muted/50">
                 {headerGroup.headers.map((header) => (
-                  <th key={header.id} className="px-4 py-2.5 text-left font-medium">
+                  <th
+                    key={header.id}
+                    className={cn(
+                      'px-4 py-2.5 text-left font-medium',
+                      header.column.columnDef.meta?.className,
+                    )}
+                  >
                     {header.isPlaceholder
                       ? null
                       : flexRender(header.column.columnDef.header, header.getContext())}
@@ -107,7 +124,10 @@ export function DataTable<TData>({
               rows.map((row) => (
                 <tr key={row.id} className="border-b last:border-0 hover:bg-muted/40">
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-4 py-3">
+                    <td
+                      key={cell.id}
+                      className={cn('px-4 py-3', cell.column.columnDef.meta?.className)}
+                    >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}

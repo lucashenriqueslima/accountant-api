@@ -32,7 +32,7 @@ export function DataTableToolbar({
 
   return (
     <div className="flex flex-wrap items-end gap-3">
-      <div className="relative w-full max-w-xs">
+      <div className="relative w-full sm:max-w-xs">
         <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           value={filters.search}
@@ -43,25 +43,25 @@ export function DataTableToolbar({
       </div>
 
       {showDateFilter && (
-        <div className="flex items-end gap-2">
-          <div className="flex flex-col gap-1">
+        <div className="flex w-full items-end gap-2 sm:w-auto">
+          <div className="flex flex-1 flex-col gap-1 sm:flex-none">
             <label className="text-xs text-muted-foreground">{dateLabel} — de</label>
             <input
               type="date"
               value={filters.dateFrom}
               max={filters.dateTo || undefined}
               onChange={(e) => patch({ dateFrom: e.target.value })}
-              className={cn(dateInputClass)}
+              className={cn(dateInputClass, 'w-full min-w-0 sm:w-auto')}
             />
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-1 flex-col gap-1 sm:flex-none">
             <label className="text-xs text-muted-foreground">até</label>
             <input
               type="date"
               value={filters.dateTo}
               min={filters.dateFrom || undefined}
               onChange={(e) => patch({ dateTo: e.target.value })}
-              className={cn(dateInputClass)}
+              className={cn(dateInputClass, 'w-full min-w-0 sm:w-auto')}
             />
           </div>
         </div>

@@ -39,6 +39,7 @@ export function CardsListPage() {
       columnHelper.display({
         id: 'client',
         header: 'Cliente',
+        meta: { className: 'hidden md:table-cell' },
         cell: (info) => (
           <span className="text-muted-foreground">
             {info.row.original.client?.tradeName ?? info.row.original.client?.name ?? '—'}
@@ -48,6 +49,7 @@ export function CardsListPage() {
       columnHelper.display({
         id: 'assignee',
         header: 'Responsável',
+        meta: { className: 'hidden lg:table-cell' },
         cell: (info) => (
           <span className="text-muted-foreground">{info.row.original.assignee?.name ?? '—'}</span>
         ),
@@ -55,12 +57,14 @@ export function CardsListPage() {
       columnHelper.display({
         id: 'status',
         header: 'Status',
+        meta: { className: 'hidden sm:table-cell' },
         cell: (info) => (
           <span className="text-muted-foreground">{info.row.original.column?.name ?? '—'}</span>
         ),
       }),
       columnHelper.accessor('priority', {
         header: sortableHeader('Prioridade'),
+        meta: { className: 'hidden sm:table-cell' },
         cell: (info) => (
           <Badge className={cn('border-transparent', priorityStyles[info.getValue()])}>
             {priorityLabels[info.getValue()]}
@@ -106,12 +110,12 @@ export function CardsListPage() {
 
   return (
     <>
-      <header className="flex items-center justify-between border-b px-6 py-4">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3 sm:px-6 sm:py-4">
         <div>
           <h1 className="text-lg font-semibold">Tarefas</h1>
           <p className="text-sm text-muted-foreground">Obrigações e demandas do escritório.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setTemplatesOpen(true)}>
             <LayoutTemplate className="size-4" />
             Modelos
@@ -125,7 +129,7 @@ export function CardsListPage() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-4 sm:p-6">
         <DataTable
           columns={columns}
           data={cards ?? []}

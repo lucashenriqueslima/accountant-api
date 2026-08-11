@@ -6,7 +6,53 @@ const prisma = new PrismaClient();
 // Senha de desenvolvimento para todos os usuários do seed.
 const DEV_PASSWORD = 'Forte@123';
 
+// Hosts considerados seguros para rodar o seed.
+const HOSTS_LOCAIS = ['localhost', '127.0.0.1', '::1', 'host.docker.internal', 'mysql', 'db'];
+
+/**
+ * Trava de segurança: o seed apaga TODAS as tabelas antes de repovoar, e cria
+ * usuários com uma senha pública versionada neste arquivo. Rodar isso contra
+ * produção destrói a base inteira. Só liberamos quando o banco é claramente
+ * local — ou quando alguém passa SEED_ALLOW_REMOTE=true de propósito.
+ */
+function garantirBancoSeguro() {
+  if (process.env.SEED_ALLOW_REMOTE === 'true') {
+    console.warn('⚠️  SEED_ALLOW_REMOTE=true — trava desativada explicitamente.');
+    return;
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'Seed bloqueado: NODE_ENV=production. Ele apaga todas as tabelas e repõe dados de exemplo.',
+    );
+  }
+
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    throw new Error('Seed bloqueado: DATABASE_URL não está definida.');
+  }
+
+  // Falha fechada: se não der para identificar o host com certeza, não roda.
+  let host: string;
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    throw new Error(
+      'Seed bloqueado: não foi possível extrair o host da DATABASE_URL para validá-la.',
+    );
+  }
+
+  if (!HOSTS_LOCAIS.includes(host)) {
+    throw new Error(
+      `Seed bloqueado: DATABASE_URL aponta para "${host}", que não é um banco local.\n` +
+        'Se isso é intencional, rode com SEED_ALLOW_REMOTE=true.',
+    );
+  }
+}
+
 async function main() {
+  garantirBancoSeguro();
+
   console.log('🌱 Populando o banco de dados...');
 
   // Limpa em ordem segura (respeitando FKs)

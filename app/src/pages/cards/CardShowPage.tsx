@@ -31,7 +31,7 @@ export function CardShowPage() {
 
   return (
     <>
-      <header className="flex items-center justify-between border-b px-6 py-4">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex items-center gap-3">
           <Button asChild variant="ghost" size="icon">
             <Link to="/tarefas">
@@ -50,7 +50,7 @@ export function CardShowPage() {
         )}
       </header>
 
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto p-4 sm:p-6">
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Carregando…</p>
         ) : isError || !card ? (

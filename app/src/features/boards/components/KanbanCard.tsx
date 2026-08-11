@@ -1,4 +1,4 @@
-import { Building2, CalendarDays, MessageSquare } from 'lucide-react';
+import { ArrowRightLeft, Building2, CalendarDays, MessageSquare } from 'lucide-react';
 import { useState } from 'react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -24,10 +24,15 @@ function formatDate(value: string) {
 
 interface KanbanCardProps {
   card: CardType;
+  /// Coluna atual do cartão (excluída das opções do seletor "mover para").
+  currentColumnId: string;
+  /// Demais colunas do quadro, para mover o cartão sem drag-and-drop (mobile).
+  moveTargets: { id: string; name: string }[];
+  onMove: (cardId: string, columnId: string) => void;
   onDragStart: (cardId: string) => void;
 }
 
-export function KanbanCard({ card, onDragStart }: KanbanCardProps) {
+export function KanbanCard({ card, currentColumnId, moveTargets, onMove, onDragStart }: KanbanCardProps) {
   const { hasRole } = useAuth();
   const [detailOpen, setDetailOpen] = useState(false);
 
@@ -82,6 +87,37 @@ export function KanbanCard({ card, onDragStart }: KanbanCardProps) {
           >
             <MessageSquare className="size-3.5" />
           </button>
+
+          {moveTargets.length > 1 && (
+            <span
+              title="Mover para outra coluna"
+              className="relative inline-flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:hidden"
+            >
+              <ArrowRightLeft className="size-3.5" />
+              {/* Select nativo transparente por cima do ícone: o toque abre o
+                  seletor do sistema — substitui o drag-and-drop no touch. */}
+              <select
+                value=""
+                aria-label="Mover para outra coluna"
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => {
+                  if (e.target.value) onMove(card.id, e.target.value);
+                }}
+                className="absolute inset-0 size-full cursor-pointer opacity-0"
+              >
+                <option value="" disabled>
+                  Mover para…
+                </option>
+                {moveTargets
+                  .filter((t) => t.id !== currentColumnId)
+                  .map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+              </select>
+            </span>
+          )}
 
           {card.dueDate && (
             <span

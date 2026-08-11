@@ -225,7 +225,7 @@ export function CardTemplatesManagerDialog({
               />
             </div>
 
-            <div className={cn('grid gap-3', clientId ? 'grid-cols-1' : 'grid-cols-2')}>
+            <div className={cn('grid gap-3', clientId ? 'grid-cols-1' : 'sm:grid-cols-2')}>
               <div className="space-y-1.5">
                 <Label htmlFor="template-board">Quadro</Label>
                 <select
@@ -263,7 +263,7 @@ export function CardTemplatesManagerDialog({
               )}
             </div>
 
-            <div className="grid grid-cols-3 items-end gap-3">
+            <div className="grid items-end gap-3 sm:grid-cols-3">
               <div className="space-y-1.5">
                 <Label htmlFor="template-priority">Prioridade</Label>
                 <select

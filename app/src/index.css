@@ -76,4 +76,16 @@
     @apply bg-background text-foreground;
     font-feature-settings: 'rlig' 1, 'calt' 1;
   }
+
+  /* iOS Safari dá zoom automático ao focar campos com fonte < 16px, o que
+     desloca todo o layout. Em telas estreitas, força 16px nos campos.
+     (!important para vencer utilitários text-sm do Tailwind.) */
+  @media (max-width: 767px) {
+    input,
+    select,
+    textarea,
+    [contenteditable='true'] {
+      font-size: 1rem !important;
+    }
+  }
 }

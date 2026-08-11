@@ -38,12 +38,23 @@ export function KanbanBoard({ board, allowCreate, defaultAssigneeId }: KanbanBoa
     moveCard.mutate({ cardId, columnId, position: target });
   };
 
+  // Alternativa ao drag-and-drop (que não existe em telas touch): o cartão
+  // oferece um seletor "mover para" e cai no fim da coluna escolhida.
+  const moveTargets = board.columns.map((c) => ({ id: c.id, name: c.name }));
+  const handleMoveToColumn = (cardId: string, columnId: string) => {
+    const target = board.columns.find((c) => c.id === columnId);
+    if (!target) return;
+    moveCard.mutate({ cardId, columnId, position: target.cards.length });
+  };
+
   return (
-    <div className="flex h-full items-start gap-4 overflow-x-auto pb-4">
+    <div className="flex h-full snap-x snap-mandatory items-start gap-4 overflow-x-auto pb-4 md:snap-none">
       {board.columns.map((column) => (
         <KanbanColumn
           key={column.id}
           column={column}
+          moveTargets={moveTargets}
+          onMoveCard={handleMoveToColumn}
           onDragStart={(cardId) => {
             draggedCardId.current = cardId;
           }}
