@@ -17,6 +17,7 @@
     "db:generate": "pnpm --filter ./api prisma:generate",
     "db:migrate": "pnpm --filter ./api prisma:migrate",
     "db:seed": "pnpm --filter ./api prisma:seed",
+    "db:seed:boards": "pnpm --filter ./api prisma:seed:boards",
     "db:studio": "pnpm --filter ./api prisma:studio"
   },
   "devDependencies": {
