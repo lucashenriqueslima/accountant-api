@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { ClientFilterCombobox } from '@/features/boards/components/ClientFilterCombobox';
 import { KanbanBoard } from '@/features/boards/components/KanbanBoard';
 import { useBoard, useBoards } from '@/features/boards/api';
 import { departmentLabels } from '@/features/boards/constants';
+import { boardClientOptions } from '@/features/boards/filters';
 import { useUsers } from '@/features/users/api';
 import { cn } from '@/lib/utils';
 
@@ -10,12 +12,15 @@ export function BoardsPage() {
   const { data: users } = useUsers();
   const [selectedId, setSelectedId] = useState<string>();
   const [assigneeId, setAssigneeId] = useState<string>('');
+  // Empresas selecionadas no filtro; vazio = todas.
+  const [clientIds, setClientIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (!selectedId && boards?.length) setSelectedId(boards[0].id);
   }, [boards, selectedId]);
 
   const { data: board, isLoading: loadingBoard } = useBoard(selectedId, assigneeId || undefined);
+  const clientOptions = useMemo(() => boardClientOptions(board), [board]);
 
   return (
     <>
@@ -28,19 +33,29 @@ export function BoardsPage() {
             </p>
           </div>
 
-          {/* Filtro por responsável — ver o board de um colaborador específico */}
-          <select
-            value={assigneeId}
-            onChange={(e) => setAssigneeId(e.target.value)}
-            className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring sm:w-auto"
-          >
-            <option value="">Todos os responsáveis</option>
-            {users?.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
-              </option>
-            ))}
-          </select>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            {/* Filtro por responsável — ver o board de um colaborador específico */}
+            <select
+              value={assigneeId}
+              onChange={(e) => setAssigneeId(e.target.value)}
+              className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring sm:w-auto"
+            >
+              <option value="">Todos os responsáveis</option>
+              {users?.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Filtro por empresa — mostra só os cartões dos clientes escolhidos */}
+            <ClientFilterCombobox
+              options={clientOptions}
+              value={clientIds}
+              onChange={setClientIds}
+              className="w-full sm:w-56"
+            />
+          </div>
         </div>
 
         {boards && boards.length > 0 && (
@@ -68,7 +83,12 @@ export function BoardsPage() {
         {loadingBoards || loadingBoard ? (
           <p className="text-sm text-muted-foreground">Carregando…</p>
         ) : board ? (
-          <KanbanBoard board={board} allowCreate defaultAssigneeId={assigneeId || undefined} />
+          <KanbanBoard
+            board={board}
+            allowCreate
+            defaultAssigneeId={assigneeId || undefined}
+            clientIds={clientIds}
+          />
         ) : (
           <p className="text-sm text-muted-foreground">Nenhum quadro disponível.</p>
         )}
