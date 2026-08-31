@@ -1,4 +1,16 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["node_modules", "test", "dist", "**/*spec.ts", "prisma/seed.ts"]
+  "compilerOptions": {
+    // Trava o layout do dist: sem isso, um único .ts fora de src/ entrando na
+    // compilação sobe o root comum e o build passa a emitir dist/src/main.js,
+    // que não é o que o pm2 executa. Com rootDir o erro é alto e claro.
+    "rootDir": "src",
+    // O cache incremental mora dentro do dist. Fora dele, apagar o dist deixa
+    // um buildinfo órfão e o tsc conclui que está tudo em dia — saindo com 0 e
+    // sem emitir nada.
+    "tsBuildInfoFile": "./dist/tsconfig.build.tsbuildinfo"
+  },
+  // A pasta prisma/ inteira fica de fora — os seeds rodam por ts-node e nunca
+  // fazem parte do dist.
+  "exclude": ["node_modules", "test", "dist", "**/*spec.ts", "prisma"]
 }

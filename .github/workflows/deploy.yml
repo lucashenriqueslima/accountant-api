@@ -1,0 +1,156 @@
+name: Deploy produção
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Um deploy por vez. Não cancela o que já está rodando: abortar no meio de uma
+# migration deixaria o servidor num estado indefinido.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  ARTIFACT_BUCKET: forte-deploy-artifacts-098231071265
+  INSTANCE_ID: i-0c7db7dd0fff23ad9
+  DEPLOY_ROLE: arn:aws:iam::098231071265:role/forte-github-deploy
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Gerar Prisma Client
+        run: pnpm --filter @forte/api prisma:generate
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build da API
+        run: pnpm --filter @forte/api build
+
+      # VITE_API_URL não é definida de propósito: o código já usa '/api' como
+      # padrão, que é exatamente o valor de produção (mesma origem, via nginx).
+      - name: Build do front
+        run: pnpm --filter @forte/app build
+
+      # O tar da API leva só o que é neutro de arquitetura. node_modules fica
+      # de fora: os engines do Prisma são ARM64 e são instalados no servidor.
+      - name: Empacotar artefatos
+        run: |
+          mkdir -p artifacts
+          tar -czf artifacts/api.tar.gz \
+            api/dist api/prisma api/package.json \
+            app/package.json package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc
+          tar -czf artifacts/app.tar.gz -C app/dist .
+          cp infra/deploy.sh artifacts/deploy.sh
+          ls -lh artifacts
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ github.sha }}
+          path: artifacts/
+          retention-days: 7
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      id-token: write # necessário para o OIDC da AWS
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-${{ github.sha }}
+          path: artifacts
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.DEPLOY_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Subir artefatos para o S3
+        run: |
+          aws s3 cp artifacts/api.tar.gz "s3://$ARTIFACT_BUCKET/$GITHUB_SHA/api.tar.gz"
+          aws s3 cp artifacts/app.tar.gz "s3://$ARTIFACT_BUCKET/$GITHUB_SHA/app.tar.gz"
+          aws s3 cp artifacts/deploy.sh  "s3://$ARTIFACT_BUCKET/$GITHUB_SHA/deploy.sh"
+
+      - name: Rodar o deploy no servidor via SSM
+        run: |
+          set -euo pipefail
+
+          # O próprio script de deploy vem do S3 a cada execução, então ele nunca
+          # sai de sincronia com o infra/deploy.sh versionado aqui.
+          BOOTSTRAP="set -e
+          mkdir -p /srv/forte/bin
+          aws s3 cp s3://$ARTIFACT_BUCKET/$GITHUB_SHA/deploy.sh /srv/forte/bin/deploy.sh --only-show-errors
+          chmod 750 /srv/forte/bin/deploy.sh
+          /srv/forte/bin/deploy.sh $ARTIFACT_BUCKET $GITHUB_SHA"
+
+          PARAMS=$(jq -n --arg cmd "$BOOTSTRAP" \
+            '{commands: [$cmd], executionTimeout: ["1800"]}')
+
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name AWS-RunShellScript \
+            --comment "deploy ${GITHUB_SHA:0:7}" \
+            --parameters "$PARAMS" \
+            --query Command.CommandId --output text)
+          echo "CommandId: $CMD_ID"
+
+          # O waiter do CLI desiste em 100s, curto demais para um pnpm install
+          # no t4g.micro — daí o loop próprio (até 30 min).
+          STATUS=Pending
+          for _ in $(seq 1 180); do
+            sleep 10
+            STATUS=$(aws ssm get-command-invocation \
+              --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" \
+              --query Status --output text 2>/dev/null || echo Pending)
+            echo "status: $STATUS"
+            case "$STATUS" in
+              Success|Failed|Cancelled|TimedOut) break ;;
+            esac
+          done
+
+          echo "::group::Saída do deploy"
+          aws ssm get-command-invocation \
+            --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" \
+            --query StandardOutputContent --output text || true
+          echo "::endgroup::"
+
+          ERRO=$(aws ssm get-command-invocation \
+            --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" \
+            --query StandardErrorContent --output text || true)
+          if [[ -n "$ERRO" && "$ERRO" != "None" ]]; then
+            echo "::group::stderr"
+            echo "$ERRO"
+            echo "::endgroup::"
+          fi
+
+          if [[ "$STATUS" != "Success" ]]; then
+            echo "::error::deploy terminou com status $STATUS"
+            exit 1
+          fi
+
+      - name: Conferir o healthcheck público
+        run: |
+          curl -fsS --retry 5 --retry-delay 3 https://app.forte10.com.br/api/health

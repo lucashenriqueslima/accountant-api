@@ -1,0 +1,20 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "BaixarArtefatos",
+      "Effect": "Allow",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::forte-deploy-artifacts-098231071265/*"
+    },
+    {
+      "Sid": "SnapshotAntesDaMigration",
+      "Effect": "Allow",
+      "Action": "rds:CreateDBSnapshot",
+      "Resource": [
+        "arn:aws:rds:us-east-1:098231071265:db:forte-db",
+        "arn:aws:rds:us-east-1:098231071265:snapshot:*"
+      ]
+    }
+  ]
+}
