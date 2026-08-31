@@ -36,15 +36,13 @@ export function CardsListPage() {
         header: sortableHeader('Tarefa'),
         cell: (info) => <span className="font-medium">{info.getValue()}</span>,
       }),
-      columnHelper.display({
+      columnHelper.accessor((row) => row.client?.tradeName ?? row.client?.name ?? '', {
         id: 'client',
-        header: 'Cliente',
+        header: sortableHeader('Cliente'),
         meta: { className: 'hidden md:table-cell' },
-        cell: (info) => (
-          <span className="text-muted-foreground">
-            {info.row.original.client?.tradeName ?? info.row.original.client?.name ?? '—'}
-          </span>
-        ),
+        sortingFn: (a, b, columnId) =>
+          String(a.getValue(columnId)).localeCompare(String(b.getValue(columnId)), 'pt-BR'),
+        cell: (info) => <span className="text-muted-foreground">{info.getValue() || '—'}</span>,
       }),
       columnHelper.display({
         id: 'assignee',
